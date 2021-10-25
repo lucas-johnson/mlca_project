@@ -1,0 +1,191 @@
+---
+title: Random Forest
+author: Lucas Johnson
+date: "`r Sys.Date()`"
+---
+
+```{r}
+library(here)
+library(dplyr)
+library(ggplot2)
+library(caret)
+library(pROC)
+library(ranger)
+set.seed(123)
+```
+
+
+```{r}
+
+calc_cross_entropy <- function(rf_model, data) {
+  data <- predict(rf_model, data) |>
+    predictions() |>
+    cbind(data) |>
+    rename("No" = "1", "Yes" = "2") |>
+    mutate(prediction = ifelse(building == 1, Yes, No)) |> 
+    mutate(
+      prediction = max(1e-15, min( 1 - 1e-15, prediction)),
+      loss = -log(prediction)
+    )
+  sum(-log(data$prediction))
+}
+
+k_fold_cv <- function(data, k, ...) {
+  per_fold <- floor(nrow(data) / k)
+  fold_order <- sample(seq_len(nrow(data)), size = per_fold * k)
+  fold_rows <- split(fold_order, rep(1:k, each = per_fold))
+  vapply(
+    fold_rows, 
+    \(fold_idx) {
+      fold_test <- data[fold_idx, ]
+      fold_train <- data[-fold_idx, ]
+      fold_rf <- ranger(building ~ ., fold_train, probability = T, ...)
+      calc_cross_entropy(fold_rf, fold_test)
+    },
+    numeric(1)
+  ) |>
+    mean()
+}
+
+tune_grid <- function(tuning_grid, data) {
+  for (i in seq_len(nrow(tuning_grid))) {
+    tuning_grid$loss[i] <- k_fold_cv(
+      data, 
+      k = 5, 
+      mtry = tuning_grid$mtry[i],
+      min.node.size = tuning_grid$min.node.size[i],
+      replace = tuning_grid$replace[i],
+      sample.fraction = tuning_grid$sample.fraction[i]
+    )
+  }
+  return(tuning_grid)
+}
+
+```
+
+
+```{r}
+training <- read.csv(here("data/training.csv"))
+testing <- read.csv(here("data/testing.csv"))
+```
+
+
+# First tune
+```{r, eval = F}
+tuning_grid <- expand.grid(
+  mtry = floor(ncol(training) * c(0.3, 0.6, 0.9)), 
+  min.node.size = c(1, 5, 9), 
+  replace = c(TRUE, FALSE), 
+  sample.fraction = c(0.5, 0.65, 0.8),
+  loss = NA
+)
+results_1 <- tune_grid(tuning_grid, training)
+head(results_1[order(results_1$loss), ], 10)
+```
+
+# Second tune
+```{r, eval = F}
+tuning_grid <- expand.grid(
+  mtry = c(6, 12, 18), 
+  min.node.size = c(5, 7, 9), 
+  replace = TRUE, 
+  sample.fraction = c(0.5, 0.65, 0.8),
+  loss = NA
+)
+results_2 <- tune_grid(tuning_grid, training)
+head(results_2[order(results_2$loss), ], 10)
+```
+
+# Third tune
+```{r, eval = F}
+tuning_grid <- expand.grid(
+  mtry = c(6, 9, 12), 
+  min.node.size = c(1, 5, 9), 
+  replace = TRUE, 
+  sample.fraction = 0.5,
+  loss = NA
+)
+results_3 <- tune_grid(tuning_grid, training)
+head(results_3[order(results_3$loss), ], 10)
+```
+# Fourth tune
+```{r, eval = F}
+tuning_grid <- expand.grid(
+  mtry = 9, 
+  min.node.size = 9, 
+  replace = TRUE, 
+  sample.fraction = 0.5,
+  num.trees = c(500, 1000, 2000, 5000),
+  loss = NA
+)
+results_4 <- tune_grid(tuning_grid, training)
+head(results_4[order(results_4$loss), ], 10)
+```
+
+```{r}
+final_rf <- ranger(
+  building ~ ., 
+  training, 
+  probability = TRUE, 
+  num.trees = 500,
+  mtry = 9,
+  min.node.size = 9, 
+  replace = TRUE,
+  sample.fraction = 0.5
+)
+
+
+qplot(predictions(predict(final_rf, training)))
+
+roc_data <- cbind(
+  training, 
+  predictions(predict(final_rf, training))
+) |>
+  rename("prediction" = "2") |>
+  mutate(prediciton = round(prediction))
+
+building_roc <- roc(
+  roc_data$building, 
+  roc_data$prediction
+)
+threshold <- coords(building_roc, "best")$threshold
+
+# Test
+testing <- cbind(
+  testing, 
+  predictions(predict(final_rf, testing))
+) |>
+  rename("prediction" = "2") |>
+  mutate(prediction = ifelse(prediction >= threshold, 1, 0))
+
+
+sum(testing$prediction == testing$building) / nrow(testing)
+
+building_confusion <- confusionMatrix(
+  data = factor(testing$prediction, levels = 0:1),
+  reference = factor(testing$building, levels = 0:1),
+  positive = "1"
+)
+
+building_confusion
+
+test_roc <- roc(
+  testing$building, 
+  predictions(predict(final_rf, testing))[, 2]
+)
+plot(test_roc)
+auc(test_roc)
+
+```
+
+```{r}
+rf_summary <- list(
+  auc = auc(test_roc),
+  roc = test_roc,
+  confusion = building_confusion,
+  threshold = threshold
+)
+
+saveRDS(rf_summary, here("data/rf_summary.rds"))
+```
+

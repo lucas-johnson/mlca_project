@@ -1,0 +1,90 @@
+---
+title: logistic regression
+author: Lucas Johnson
+date: "`r Sys.Date()`"
+---
+
+```{r}
+library(here)
+library(dplyr)
+library(ggplot2)
+library(caret)
+library(pROC)
+set.seed(123)
+```
+
+
+```{r}
+training <- read.csv(here("data/training.csv"))
+testing <- read.csv(here("data/testing.csv"))
+```
+
+```{r}
+pc <- training |> 
+  select(-building) |> 
+  prcomp(center = TRUE, scale. = TRUE)
+
+training_pc <- as.data.frame(predict(pc, training))
+training_pc$building <- training$building
+
+testing_pc <- as.data.frame(predict(pc, testing))
+testing_pc$building <- testing$building
+```
+
+
+```{r}
+
+building_model <- glm(
+  building ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7, 
+  training_pc, 
+  family = "binomial"
+)
+
+qplot(predict(building_model, training_pc, type = "response"))
+
+building_roc <- roc(
+  training$building, 
+  predict(building_model, training_pc, type = "response")
+)
+threshold <- coords(building_roc, "best")$threshold
+
+
+testing <- testing |>
+  mutate(prediction = predict(building_model, testing_pc, type = "response")) |>
+  mutate(prediction = ifelse(prediction >= threshold, 1, 0))
+
+sum(testing$prediction == testing$building) / nrow(testing)
+```
+
+
+```{r}
+building_confusion <- confusionMatrix(
+  data = factor(testing$prediction, levels = 0:1),
+  reference = factor(testing$building, levels = 0:1),
+  positive = "1"
+)
+
+building_confusion
+```
+
+```{r}
+building_roc <- roc(
+  testing$building, 
+  predict(building_model, testing_pc, type = "response")
+)
+plot(building_roc)
+auc(building_roc)
+```
+
+```{r}
+logistic_summary <- list(
+  auc = auc(building_roc),
+  roc = building_roc,
+  confusion = building_confusion,
+  threshold = threshold
+)
+
+saveRDS(logistic_summary, here("data/logistic_summary.rds"))
+
+
+```

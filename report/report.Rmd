@@ -1,0 +1,16 @@
+---
+title: 'Building Footprint Identification with Airborne LiDAR: A Final Project for FOR 796'
+
+author: Lucas K Johnson
+  
+date: "`r Sys.Date()`"
+header-includes:
+    - \usepackage{setspace}\doublespacing
+    - \usepackage{float}
+bibliography: report.bib
+numbersections: true
+output:
+  bookdown::pdf_book
+keep_md: yes
+                        
+---

@@ -1,0 +1,6 @@
+data/lidar/*
+data/buildings/raw/*
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
