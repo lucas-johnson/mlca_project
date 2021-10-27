@@ -149,13 +149,15 @@ final_lgb <- lightgbm(
   label = ytrain, 
   verbose = -1L,
   obj = "binary",
-  learning_rate = 3.90625e-07, 
   nrounds = 500,
-  max_depth = 2,
-  min_data_in_bin = 8,
-  bagging_freq = 1, 
-  bagging_fraction = 0.5,
-  feature_fraction = 0.8
+  params = list(
+    learning_rate = 3.90625e-07, 
+    max_depth = 2,
+    min_data_in_bin = 8,
+    bagging_freq = 1, 
+    bagging_fraction = 0.5,
+    feature_fraction = 0.8
+  )
 )
 qplot(predict(final_lgb, xtrain))
 
