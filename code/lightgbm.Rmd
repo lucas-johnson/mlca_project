@@ -109,7 +109,7 @@ head(tuning_grid[order(tuning_grid$loss), ], 10)
 ```
 
 # Stochastic params (new ones)
-```{r}
+```{r, eval = F}
 tuning_grid <- expand.grid(
   learning_rate = 3.90625e-07, 
   nrounds = 500,
