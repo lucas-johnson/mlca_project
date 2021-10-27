@@ -17,7 +17,8 @@ output:
 keep_md: yes
 abstract: |
   This is a test.
-                        
+nocide: |
+  @rmd_cook, @rmd_guide, @rmd_man, @ggplot2, @dplyr, @tidyselect, @kbl
 ---
 
 ```{r echo = FALSE, include = F}
@@ -33,6 +34,86 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 # Introduction
 
 # Methods
+
+## Building and LiDAR Data
+
+Rasterized building footprint data served as the response data in this study 
+[@Heris2020, @Bing, @Microsoft].
+The raw raster contains counts of the number of buildings intersecting each 
+pixel. 
+This data was converted to a Boolean raster where ones represent any buildings
+present, and zeroes represent no buildings present. 
+This data was chosen for it's availability across the entire country, it's high
+accuracy (> 99% positive predictive value; @Heris2020), and it's 30m resolution.
+
+The raw LiDAR data originates from a single LiDAR acquisition covering portions
+of Erie, Genesee, and Livingston counties in western New York made available 
+by the New York Stat GIS Program Office [@EGL_Lidar]. 
+The raw LiDAR data was then height-normalized and converted into a set of 39 
+predictors chosen for their prevalence in models of forest structure
+[@Hawbaker2010; @Huang2019; @Pflugmacher2014]. 
+LiDAR data was selected due to it's known ability to characterize three
+dimensional height-profiles at high-resolution. 
+More specifically, these forest-structure predictors were chosen for 
+practicality. 
+It would be a great benefit to those mapping forest structure with LiDAR if the
+same predictors could also be leveraged for building better forest masks.
+
+
+The LiDAR predictors, in raster stack form, were overlaid with the Boolean
+building raster to create stack of data where each pixel contained a set of 39 
+predictors and one building indicator response variable.
+A stratified random sample was conducted on the raster stack, with the building
+indicator providing the levels of stratification. 
+3,500 observations (pixel locations) were selected from each stratum resulting 
+in 7,000 observations for model training and testing. 
+This final dataset was converted to a 7000x40 (rows, columns) data frame.
+The lidR [@lidrCRAN; @lidrRSE] and raster [@Raster2021] packages were used for 
+height-normalization and dataset generation.
+
+Additionally, principle components were derived from the final dataset to 
+remove multicollinearity from the 39 predictors [@RCore]. 
+This alternative dataset consisted of the first seven principle components, 
+as they accounted for $\ge$ 95% of the information in the predictors.
+This alternative dataset was a 7000x7 data frame.
+
+## Models
+
+Three candidate classification models were fit to a random 70% 
+(calibration data; n = 
+`r nrow(read.csv(here("data/training.csv")))`
+)
+of the observations, with the remaining 30% reserved for model performance 
+assessment (holdout data; n = 
+`r nrow(read.csv(here("data/testing.csv")))`
+).
+
+The first candidate model was a simple logistic regression model [@RCore], 
+and was trained on the principle components variant of the calibration data.
+The second candidate model was a random forest (RF herafter) trained with
+the ranger R package [@Wright2017] and the calibration dataset. 
+The third candidate model was a stochastic gradient boosting machine 
+(LGB hereafter) trained with the LightGBM R package [@Guolin2021] 
+and the calibration dataset. 
+The hyperparemeters for both the RF and LGB models were selected using a grid 
+search where each combination of hyperparameters were compared against eachother
+using the cross-entropy loss function (CEL; Equation \@ref(eq:cel))
+computed from a random five-fold cross-validation with the calibration dataset.
+CEL is computed as follows:
+
+\begin{equation}
+\operatorname{CEL} = \sum_{i=1}^{n}{-\log{(\hat{y_{i}})}} (\#eq:cel)
+\end{equation}
+
+Where $n$ is the number of observations in the fold, and $\hat{y_i}$ is 
+the predicted probability of the true class.
+
+Each of the models was assessed against the holdout dataset and compared to one
+another using overall accuracy, specificity, sensitivity, and AUC. 
+Additionally ROC curves were plotted for each model's results on the holdout 
+set. 
+The caret and pROC R packages were used to compute these accuracy metrics 
+[@caret; @pROC].
 
 # Results
 
@@ -99,5 +180,25 @@ ggroc(
 
 
 # Discussion
+
+- RF was superior to all the others
+- Logistic still rather good. Makes you wonder if the marginal benefits of ML here
+  are worth the effort, time, understandability
+
+- What could have been done better? 
+  - ensembling methods?
+  - wider ranges of hyperparameters
+  - larger inclusion than just 95% of the information for principle components 
+    and logistic regression.
+  - Timing. Response from 2018. LiDAR from 2019
+    
+- What might these models be used for
+  - Since the predictors herein are primarily used for predicting forest 
+    structure - these models make a relatively easy way to extract man-made 
+    structures away from LiDAR-based maps of forest structure like biomass. 
+  - There are questions about transferrability of these data from this region
+    and this lidar coverages to others from different locations and times.
+
+\newpage{}
 
 # References {#references .unnumbered}
