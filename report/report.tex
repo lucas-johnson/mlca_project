@@ -204,6 +204,13 @@ The caret and pROC R packages were used to compute these accuracy metrics
 \hypertarget{results}{%
 \section{Results}\label{results}}
 
+The RF model performed the best across all accuray metrics (Table \ref{tab:metrics}).
+The LGB model was more specific but less sensitive than the Logisitc
+model, and only scored marginally better in AUC and Overall Accuracy.
+However, all three candidate models performed quite well with
+all AUC values \(\geq\) 0.87, and all overall accuracies \(\geq\) 0.79.
+The ROC curves plotted in Figure \ref{fig:roc} display similar patterns.
+
 \begin{table}
 
 \caption{\label{tab:metrics}Model accuracy metrics computed against 30\% holdout partition (n = 1500).}
@@ -224,8 +231,8 @@ RF & 0.96 & 0.90 & 0.92 & 0.89\\
 
 \begin{figure}
 \centering
-\includegraphics{report_files/figure-latex/auc-1.pdf}
-\caption{\label{fig:auc}ROC curves showing sensitivity against specificity for each model.}
+\includegraphics{report_files/figure-latex/roc-1.pdf}
+\caption{\label{fig:roc}ROC curves showing sensitivity against specificity for each model.}
 \end{figure}
 
 \hypertarget{discussion}{%

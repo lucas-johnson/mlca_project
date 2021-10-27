@@ -116,6 +116,14 @@ The caret and pROC R packages were used to compute these accuracy metrics
 [@caret; @pROC].
 
 # Results
+The RF model performed the best across all accuray metrics (Table \@ref(tab:metrics)). 
+The LGB model was more specific but less sensitive than the Logisitc 
+model, and only scored marginally better in AUC and Overall Accuracy. 
+However, all three candidate models performed quite well with 
+all AUC values $\geq$ 0.87, and all overall accuracies $\geq$ 0.79. 
+The ROC curves plotted in Figure \@ref(fig:roc) display similar patterns. 
+
+
 
 ```{r metrics}
 get_metric_row <- function(summary_obj, model_name) {
@@ -154,7 +162,7 @@ bind_rows(
   kable_styling(font_size = 12)
 ```
 
-```{r auc, fig.cap = "ROC curves showing sensitivity against specificity for each model."}
+```{r roc, fig.cap = "ROC curves showing sensitivity against specificity for each model."}
 logistic_summary <- readRDS(here("data/logistic_summary.rds"))
 rf_summary <- readRDS(here("data/rf_summary.rds"))
 lgb_summary <- readRDS(here("data/lgb_summary.rds"))
