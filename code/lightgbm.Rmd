@@ -1,0 +1,210 @@
+---
+title: LightGBM
+author: Lucas Johnson
+date: "`r Sys.Date()`"
+---
+
+```{r}
+library(here)
+library(dplyr)
+library(ggplot2)
+library(caret)
+library(pROC)
+library(lightgbm)
+set.seed(123)
+```
+
+```{r}
+
+calc_cross_entropy <- function(model, data) {
+  xtest <- as.matrix(data[setdiff(names(data), "building")])
+  data <- cbind(data, list(prediction = predict(model, xtest))) |>
+    mutate(
+      prediction = max(1e-15, min( 1 - 1e-15, prediction)),
+      loss = -log(prediction)
+    )
+  sum(-log(data$prediction))
+}
+
+k_fold_cv <- function(data, k, nrounds = 10L, ...) {
+  per_fold <- floor(nrow(data) / k)
+  fold_order <- sample(seq_len(nrow(data)), size = per_fold * k)
+  fold_rows <- split(fold_order, rep(1:k, each = per_fold))
+  vapply(
+    fold_rows, 
+    \(fold_idx) {
+      fold_test <- data[fold_idx, ]
+      fold_train <- data[-fold_idx, ]
+      
+      xtrain <- as.matrix(fold_train[setdiff(names(fold_train), "building")])
+      ytrain <- fold_train[["building"]]
+      fold_lgb <- lightgbm(
+        data = xtrain, 
+        label = ytrain,
+        verbose = -1L,
+        obj = "binary", 
+        nrounds = nrounds,
+        params = list(...)
+      )
+      calc_cross_entropy(fold_lgb, fold_test)
+    }, 
+    numeric(1)
+  ) |> 
+    mean()
+}
+```
+
+```{r}
+training <- read.csv(here("data/training.csv"))
+testing <- read.csv(here("data/testing.csv"))
+```
+
+# Tune learning_rate
+```{r, eval = F}
+tuning_grid <- expand.grid(
+  learning_rate = c(0.00000625, 3.125e-06, 1.5625e-06, 7.8125e-07, 3.90625e-07),
+  nrounds = c(500, 1000, 1500, 2000, 2500),
+  loss = NA,
+  time = NA
+)
+
+for (i in seq_len(nrow(tuning_grid))) { 
+  train_time <- system.time({
+    loss <- k_fold_cv(
+      training, 
+      k = 5, 
+      learning_rate = tuning_grid$learning_rate[i],
+      nrounds = tuning_grid$nrounds[i]
+    )
+  })
+  tuning_grid$loss[i] <- loss
+  tuning_grid$time[i] <- train_time[["elapsed"]]
+}
+
+head(tuning_grid[order(tuning_grid$loss), ], 10)
+```
+# Tune max_depth and min_data_in_bin
+```{r, eval = F}
+tuning_grid <- expand.grid(
+  learning_rate = 3.90625e-07, 
+  nrounds = 500,
+  max_depth = c(-1, 2, 8, 32, 63),
+  min_data_in_bin = c(3, 8, 13, 18), 
+  loss = NA
+)
+
+for (i in seq_len(nrow(tuning_grid))) {
+  tuning_grid$loss[i] <- k_fold_cv(
+    training, 
+    k = 5, 
+    learning_rate = tuning_grid$learning_rate[i],
+    nrounds = tuning_grid$nrounds[i],
+    max_depth = tuning_grid$max_depth[i],
+    min_data_in_bin = tuning_grid$min_data_in_bin[i]
+  )
+}
+head(tuning_grid[order(tuning_grid$loss), ], 10)
+
+
+```
+
+# Stochastic params (new ones)
+```{r}
+tuning_grid <- expand.grid(
+  learning_rate = 3.90625e-07, 
+  nrounds = 500,
+  max_depth = 32,
+  min_data_in_bin = 3,
+  bagging_freq = c(0, 1, 5, 10), 
+  bagging_fraction = seq(0.3, 1.0, 0.1),
+  feature_fraction = seq(0.3, 1.0, 0.1),
+  loss = NA
+)
+
+for (i in seq_len(nrow(tuning_grid))) {
+  tuning_grid$loss[i] <- k_fold_cv(
+    training,
+    k = 5,
+    learning_rate = tuning_grid$learning_rate[i],
+    nrounds = tuning_grid$nrounds[i],
+    max_depth = tuning_grid$max_depth[i],
+    min_data_in_bin = tuning_grid$max_depth[i],
+    bagging_freq = tuning_grid$bagging_freq[i],
+    bagging_fraction = tuning_grid$bagging_fraction[i],
+    feature_fraction = tuning_grid$feature_fraction[i]
+  )
+}
+
+head(arrange(tuning_grid, loss), 10) |> 
+  select(bagging_freq, bagging_fraction, feature_fraction, loss)
+```
+
+# Final GBM
+```{r}
+xtrain <- as.matrix(training[setdiff(names(training), "building")])
+ytrain <- training[["building"]]
+
+final_lgb <- lightgbm(
+  data = xtrain,
+  label = ytrain, 
+  verbose = -1L,
+  obj = "binary",
+  learning_rate = 3.90625e-07, 
+  nrounds = 500,
+  max_depth = 2,
+  min_data_in_bin = 8,
+  bagging_freq = 1, 
+  bagging_fraction = 0.5,
+  feature_fraction = 0.8
+)
+qplot(predict(final_lgb, xtrain))
+
+roc_data <- cbind(
+  training, 
+  list(prediction = predict(final_lgb, xtrain))
+) |>
+  mutate(prediciton = round(prediction))
+
+building_roc <- roc(
+  roc_data$building, 
+  roc_data$prediction
+)
+threshold <- coords(building_roc, "best")$threshold
+
+# Test
+xtest <- as.matrix(testing[setdiff(names(testing), "building")])
+testing <- cbind(
+  testing, 
+  list(prediction = predict(final_lgb, xtest))
+) |>
+  mutate(prediction = ifelse(prediction >= threshold, 1, 0))
+
+sum(testing$prediction == testing$building) / nrow(testing)
+
+building_confusion <- confusionMatrix(
+  data = factor(testing$prediction, levels = 0:1),
+  reference = factor(testing$building, levels = 0:1),
+  positive = "1"
+)
+
+building_confusion
+
+test_roc <- roc(
+  testing$building, 
+  predict(final_lgb, xtest)
+)
+plot(test_roc)
+auc(test_roc)
+```
+
+```{r}
+lgb_summary <- list(
+  auc = auc(test_roc),
+  roc = test_roc,
+  confusion = building_confusion,
+  threshold = threshold
+)
+
+saveRDS(lgb_summary, here("data/lgb_summary.rds"))
+```
+

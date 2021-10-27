@@ -1,7 +1,8 @@
 ---
 title: 'Building Footprint Identification with Airborne LiDAR: A Final Project for FOR 796'
 
-author: Lucas K Johnson
+author:
+  - name: Lucas K Johnson
   
 date: "`r Sys.Date()`"
 header-includes:
@@ -10,7 +11,93 @@ header-includes:
 bibliography: report.bib
 numbersections: true
 output:
-  bookdown::pdf_book
+  bookdown::pdf_book:
+    base_format: rticles::elsevier_article
+    
 keep_md: yes
+abstract: |
+  This is a test.
                         
 ---
+
+```{r echo = FALSE, include = F}
+library(kableExtra)
+library(ggplot2)
+library(here)
+library(dplyr)
+library(pROC)
+library(tidyselect)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+# Introduction
+
+# Methods
+
+# Results
+
+```{r metrics}
+get_metric_row <- function(summary_obj, model_name) {
+  list(
+    model = model_name,
+    auc = summary_obj$auc[[1]],
+    overall = summary_obj$confusion$overall[[1]],
+    sensitivity = summary_obj$confusion$byClass[[1]],
+    specificity = summary_obj$confusion$byClass[[2]]
+  )
+}
+bind_rows(
+  get_metric_row(readRDS(here("data/logistic_summary.rds")), "Logistic"),
+  get_metric_row(readRDS(here("data/rf_summary.rds")), "RF"),
+  get_metric_row(readRDS(here("data/lgb_summary.rds")), "LGB")
+) |>
+  mutate(across(where(is.numeric), round, 2)) |>
+  arrange(auc) |>
+  kbl(
+    col.names = c(
+      "Model", "AUC", "Overall Accuracy", "Sensitivity", "Specificity"
+    ),
+    booktabs = TRUE,
+    align = c("l", rep("r", 4)), 
+    linesep = "\\addlinespace",
+    caption = gsub(
+      "%",
+      "\\\\%",
+      sprintf(
+        "Model accuracy metrics computed against 30%% holdout partition (n = %i).",
+        nrow(read.csv(here("data/testing.csv")))
+      )
+    )
+  )|>
+  row_spec(0, align = "c") |>
+  kable_styling(font_size = 12)
+```
+
+```{r auc, fig.cap = "ROC curves showing sensitivity against specificity for each model."}
+logistic_summary <- readRDS(here("data/logistic_summary.rds"))
+rf_summary <- readRDS(here("data/rf_summary.rds"))
+lgb_summary <- readRDS(here("data/lgb_summary.rds"))
+
+ggroc(
+  list(
+    "LGB" = lgb_summary$roc, 
+    "RF" = rf_summary$roc, 
+    "Logistic" = logistic_summary$roc
+  ),
+  size = 0.5
+) + 
+  scale_colour_brewer(palette = "Dark2") +
+  theme_minimal() + 
+  labs(color='Model', x = "Specificity", y = "Sensitivity") +
+  theme(
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.text = element_text(size = 10), 
+    legend.title = element_text(size = 12)
+  )
+```
+
+
+# Discussion
+
+# References {#references .unnumbered}
