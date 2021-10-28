@@ -23,7 +23,7 @@ calc_cross_entropy <- function(model, data) {
     mutate(
       prediction = max(1e-15, min( 1 - 1e-15, prediction)),
       loss = -log(prediction)
-    )tru
+    )
   sum(-log(data$prediction))
 }
 
