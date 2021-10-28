@@ -19,10 +19,11 @@ set.seed(123)
 calc_cross_entropy <- function(model, data) {
   xtest <- as.matrix(data[setdiff(names(data), "building")])
   data <- cbind(data, list(prediction = predict(model, xtest))) |>
+    mutate(prediction = ifelse(building == 1, prediction, 1 - prediction)) |> 
     mutate(
       prediction = max(1e-15, min( 1 - 1e-15, prediction)),
       loss = -log(prediction)
-    )
+    )tru
   sum(-log(data$prediction))
 }
 
@@ -87,7 +88,7 @@ head(tuning_grid[order(tuning_grid$loss), ], 10)
 ```{r, eval = F}
 tuning_grid <- expand.grid(
   learning_rate = 3.90625e-07, 
-  nrounds = 500,
+  nrounds = 1000,
   max_depth = c(-1, 2, 8, 32, 63),
   min_data_in_bin = c(3, 8, 13, 18), 
   loss = NA
@@ -112,7 +113,7 @@ head(tuning_grid[order(tuning_grid$loss), ], 10)
 ```{r, eval = F}
 tuning_grid <- expand.grid(
   learning_rate = 3.90625e-07, 
-  nrounds = 500,
+  nrounds = 1000,
   max_depth = 32,
   min_data_in_bin = 3,
   bagging_freq = c(0, 1, 5, 10), 
@@ -149,14 +150,14 @@ final_lgb <- lightgbm(
   label = ytrain, 
   verbose = -1L,
   obj = "binary",
-  nrounds = 500,
+  nrounds = 1000,
   params = list(
     learning_rate = 3.90625e-07, 
-    max_depth = 2,
-    min_data_in_bin = 8,
+    max_depth = 32,
+    min_data_in_bin = 3,
     bagging_freq = 1, 
-    bagging_fraction = 0.5,
-    feature_fraction = 0.8
+    bagging_fraction = 0.6,
+    feature_fraction = 0.6
   )
 )
 qplot(predict(final_lgb, xtrain))
