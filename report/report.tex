@@ -1,4 +1,4 @@
-\documentclass[review]{elsarticle} %review=doublespace preprint=single 5p=2 column
+\documentclass[]{elsarticle} %review=doublespace preprint=single 5p=2 column
 %%% Begin My package additions %%%%%%%%%%%%%%%%%%%
 \usepackage[hyphens]{url}
 
@@ -330,16 +330,16 @@ raw predictors.
 This may have been an unfair disadvantage as the RF and LGB models were given
 the opportunity to leverage 100\% of the information in the predictor space.
 
-There are a few ways we could further improve the models described in this
+There are a few ways I could further improve the models described in this
 report.
 First, more extensive grid searches could have been performed to find better
 hyperparameters.
 There is a trade-off here between the combination of time
 and performance gains, with eventually diminishing returns on the time invested.
-The tuning performed in this report produced models that were good enough for
-our purposes.
-Additionally, we might be able to produce an even better model by using
-stacked ensembles, which often serve to reduce predictive error especially
+The relatively limited tuning performed in this report produced models that were
+good enough for my purposes.
+Additionally, I might be able to produce an even better model by using
+stacked ensembles, which often serve to reduce predictive error, especially
 when the error from component models is dominated by variance (Dormann et al. 2018).
 Noisy data, which we can assume categorizes our LiDAR and building data, often
 yields models with variance dominated error (Dormann et al. 2018).
@@ -355,7 +355,7 @@ predicting forest structure, these models provide a relatively simple option
 to mask man-made structures from LiDAR-derived maps of forest structure like
 aboveground biomass or canopy height.
 Further investigation is required to assess the transferrability of these models
-trained in one region (western New York) with one LiDAR acquisition to others.
+trained in one region with one LiDAR acquisition to others.
 If separate models are required for each distinct LiDAR acquisition or region,
 the relative benefit of the models developed in this report would only be
 slightly diminsihed, as these models would still serve as a reference point for

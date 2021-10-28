@@ -13,7 +13,6 @@ output:
   bookdown::pdf_book:
     base_format: rticles::elsevier_article
     
-layout: review
     
 keep_md: yes
 abstract: |
