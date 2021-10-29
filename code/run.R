@@ -11,3 +11,7 @@ rmarkdown::render(
   here("report/report.Rmd")
 )
 
+rmarkdown::render(
+  here("README.Rmd")
+)
+

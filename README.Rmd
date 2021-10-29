@@ -1,0 +1,25 @@
+---
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# MLCA Project
+
+Code, data, and report for final project in Machine Learning Concepts and 
+Applications (FOR 796) Fall 2021
+
+## Reproduce the Report
+
+
+(Last reproduced `r Sys.Date()`)
+
+Run the following
+```{r , eval=FALSE}
+source(here::here("code/run.R")
+```
+to re-train the three component models, produce model assessment data, and
+re-render the report pdf. 
+
