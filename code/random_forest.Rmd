@@ -71,7 +71,7 @@ testing <- read.csv(here("data/testing.csv"))
 
 
 # First tune
-```{r, eval = F}
+```{r}
 tuning_grid <- expand.grid(
   mtry = floor(ncol(training) * c(0.3, 0.6, 0.9)), 
   min.node.size = c(1, 5, 9), 
@@ -84,7 +84,7 @@ head(results_1[order(results_1$loss), ], 10)
 ```
 
 # Second tune
-```{r, eval = F}
+```{r}
 tuning_grid <- expand.grid(
   mtry = c(6, 12, 18), 
   min.node.size = c(5, 7, 9), 
@@ -97,7 +97,7 @@ head(results_2[order(results_2$loss), ], 10)
 ```
 
 # Third tune
-```{r, eval = F}
+```{r}
 tuning_grid <- expand.grid(
   mtry = c(6, 9, 12), 
   min.node.size = c(1, 5, 9), 
@@ -109,7 +109,7 @@ results_3 <- tune_grid(tuning_grid, training)
 head(results_3[order(results_3$loss), ], 10)
 ```
 # Fourth tune
-```{r, eval = F}
+```{r}
 tuning_grid <- expand.grid(
   mtry = 9, 
   min.node.size = 9, 

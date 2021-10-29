@@ -61,7 +61,7 @@ testing <- read.csv(here("data/testing.csv"))
 ```
 
 # Tune learning_rate
-```{r, eval = F}
+```{r}
 tuning_grid <- expand.grid(
   learning_rate = c(0.00000625, 3.125e-06, 1.5625e-06, 7.8125e-07, 3.90625e-07),
   nrounds = c(500, 1000, 1500, 2000, 2500),
@@ -85,7 +85,7 @@ for (i in seq_len(nrow(tuning_grid))) {
 head(tuning_grid[order(tuning_grid$loss), ], 10)
 ```
 # Tune max_depth and min_data_in_bin
-```{r, eval = F}
+```{r}
 tuning_grid <- expand.grid(
   learning_rate = 3.90625e-07, 
   nrounds = 1000,
@@ -110,7 +110,7 @@ head(tuning_grid[order(tuning_grid$loss), ], 10)
 ```
 
 # Stochastic params (new ones)
-```{r, eval = F}
+```{r}
 tuning_grid <- expand.grid(
   learning_rate = 3.90625e-07, 
   nrounds = 1000,
