@@ -108,7 +108,7 @@
       
   \begin{abstract}
   Airborne LiDAR has emerged as a uniquely valuable and information-rich source
-  of remote sensing (RS) data for high-resolution forest assessment and mapping.
+  of remote sensing data for high-resolution forest assessment and mapping.
   However, LiDAR data is limited in its ability to distinguish man-made
   structures from natural ones, necessitating the addition of external forest
   masks in LiDAR-based forest mapping projects.
@@ -139,7 +139,7 @@ federal, state, and global agencies look towards natural solutions
 to mitigate a warming climate and the myriad resulting challenges.
 Field sampling~programs,
 like the United States Department of Agriculture's Forest Inventory and Analysis
-program (FIA) (Gray et al. 2012),
+program (FIA) (Gray et al., 2012),
 provide unbiased estimates of forest structure over large areas,
 but lack the fine spatial resolution to understand and manage forests at
 relevant scales.
@@ -147,19 +147,20 @@ Thus, high-resolution forest mapping is needed to inform decision-makers where
 forest resources should be managed or preserved.
 
 Airborne LiDAR has been established as the most valuable remote sensing data for
-the purposes of forest structure mapping (Huang et al. 2019; Hurtt et al. 2019; Chen and McRoberts 2016).
+the purposes of forest structure mapping (Chen and McRoberts, 2016; Huang et al., 2019; Hurtt et al., 2019).
 However, due to the nature of this data and its near-singular ability to
 characterize three-dimensional height-profiles,
 LiDAR cannot inherently distinguish between man-made structures and woody
 vegetation.
 To address this challenge, auxiliary landcover or forest canopy masks
 are often applied to LiDAR-modeled surfaces in attempt remove erroneous
-predictions in buildings from those in forested areas (Huang et al. 2019).
+predictions in buildings from those in forested areas (Huang et al., 2019).
 However, it is well documented that landcover maps are not 100\% accurate, and
 significant quantities of forest can be contained in non-forested classes
-(Johnson et al. 2014; Perry et al. 2008; Meneguzzo, Liknes, and Nelson 2012).
+(Johnson et al., 2014; Meneguzzo et al., 2012; Perry et al., 2008).
 Additionally, high-resolution tree-canopy delineation surfaces are expensive
-to produce often relying on expert interpretation and iterative tuning (J. P. M. O'Neil-Dunne et al. 2013; J. O'Neil-Dunne, MacFaden, and Royar 2014).
+to produce often relying on expert interpretation and iterative tuning
+(O'Neil-Dunne et al., 2014, 2013).
 
 In this report I attempt to find a middle way by producing models at reduced
 cost that can predict the presence of buildings in a mixed-use landscape with a high-degree of accuracy at a 30m resolution.
@@ -167,7 +168,7 @@ To do this I train a simple logistic model,
 a random forest model, and a stochastic gradient boosting machine to classify
 the presence (1) or absence (0) of any buildings in a given map pixel.
 Building indicator response data was derived from an open-source building
-footprint dataset developed by Microsoft (Microsoft 2018; Team 2018).
+footprint dataset developed by Microsoft (Microsoft, 2018; Team, 2018).
 The predictor data used to train these models are LiDAR-derived grid metrics, commonly used in models of forest-structure, aiding in the reduction of cost.
 If these models prove to be successful classifiers of building presence,
 the same predictors will afford future forest-structure modelers double the
@@ -180,38 +181,41 @@ benefit.
 \subsection{Building and LiDAR Data}\label{building-and-lidar-data}}
 
 Rasterized building footprint data served as the response data in this study
-(Pourpeikari Heris et al. 2020; Heris et al. 2020; Team 2018; Microsoft 2018).
+(Heris et al., 2020; Microsoft, 2018; Pourpeikari Heris et al., 2020; Team, 2018).
 The raw raster contains counts of the number of buildings intersecting each
 pixel.
 This data was converted to a Boolean raster where 1s represent the presence of
 any buildings, and 0s represent a complete lack of buildings.
 This data was chosen for its availability across the entire country, its high
 accuracy (\textgreater{} 99\% positive predictive value), and its 30m resolution
-(Heris et al. 2020).
+(Heris et al., 2020).
 
 The raw LiDAR data originates from a single acquisition covering the city
 of Buffalo and larger portions of Erie, Genesee, and Livingston counties in
-western New York (New York Office of Information Technology Services 2019).
+western New York (New York Office of Information Technology Services, 2019).
 This particular data was selected due to its known ability to characterize
 three dimensional height-profiles at high-resolution, and the range of
 landcover conditions (urban, forest, cropland).
 The data was made available by the New York State GIS Program Office.
 The raw LiDAR data was height-normalized and converted into a set of 39
 predictors (Table \ref{tab:predictors}) chosen for their prevalence in models
-of forest structure (Hawbaker et al. 2010; Huang et al. 2019; Pflugmacher et al. 2014).
+of forest structure (Hawbaker et al., 2010; Huang et al., 2019; Pflugmacher et al., 2014).
 
 The LiDAR predictors, in raster stack form, were overlaid with the Boolean
 building raster to create stack of data where each pixel contained a set of 39
 predictors and one building indicator response variable.
 A stratified random sample was conducted on the raster stack, with the building
 indicator providing the levels of stratification.
-3,500 pixels were selected from each stratum resulting in 7,000 observations for model training and testing.
+3,500 pixels were selected from each stratum resulting in 7,000 observations for
+model training and testing.
 This final dataset was converted to a 7000x40 (rows, columns) data frame.
-The lidR (Roussel and Auty 2020; Jean-Romain et al. 2020) and raster (Hijmans 2021) packages were used for
+The lidR (Jean-Romain et al., 2020; Roussel and Auty, 2020) and raster (Hijmans, 2021) packages were used for
 height-normalization and dataset generation.
-Additionally, the first seven principle components were derived from the final dataset to produce an alternative dataset without multicollinearity predictor
-dataset (R Core Team 2021).
-This alternative dataset accounted for \(\ge\) 95\% of the information in the raw predictors and existed as a 7000x7 data frame.
+Additionally, the first seven principle components were derived from the final
+dataset to produce an alternative dataset without multicollinearity predictor
+dataset.
+This alternative dataset accounted for \(\ge\) 95\% of the information in the raw
+predictors and existed as a 7000x7 data frame.
 
 \begin{table}
 
@@ -248,24 +252,24 @@ RPC1 & Ratio of first returns to all returns (Pflugmacher et al. 2012)\\
 \subsection{Models}\label{models}}
 
 Three candidate classification models were fit to a random 70\%
-(calibration data; n =
+(training data; n =
 3500
 )
 of the observations, with the remaining 30\% reserved for model performance
 assessment (holdout data; n =
 1500
 ).
-The first candidate model was a simple logistic regression model (R Core Team 2021),
-and was trained on the principle components variant of the calibration data.
+The first candidate model was a simple logistic regression model,
+and was trained on the principle components variant of the training data.
 The second candidate model was a random forest (RF herafter) trained with
-the ranger R package (Wright and Ziegler 2017).
+the ranger R package (Wright and Ziegler, 2017).
 The third candidate model was a stochastic gradient boosting machine
-(LGB hereafter) trained with the LightGBM R package (Ke et al. 2021).
+(LGB hereafter) trained with the LightGBM R package (Ke et al., 2021).
 The hyperparemeters for both the RF and LGB models were selected using a
 standard grid search where each combination of hyperparameters were compared
 against eachother using the cross-entropy loss function
 (CEL; Equation \eqref{eq:cel})
-computed from a random five-fold cross-validation with the calibration dataset.
+computed from a random five-fold cross-validation with the training dataset.
 CEL is computed as follows:
 
 \begin{equation}
@@ -276,13 +280,13 @@ Where \(n\) is the number of observations in the fold, and \(\hat{y_i}\) is
 the predicted probability of the true class.
 
 Postitive prediction thresholds for all models were chosen using the optimal
-ROC coordinates for the fully tuned models fit to the calibration data.
+ROC coordinates for the fully tuned models fit to the training data.
 Each of the models were assessed against the holdout dataset and compared to one
 another using overall accuracy, specificity, sensitivity, and AUC.
 Additionally ROC curves were plotted for each model's results on the holdout
 set.
 The caret and pROC R packages were used to compute these accuracy metrics
-(Kuhn 2021; Robin et al. 2011).
+(Kuhn, 2021; Robin et al., 2011).
 
 \hypertarget{results}{%
 \section{Results}\label{results}}
@@ -340,20 +344,24 @@ The relatively limited tuning performed in this report produced models that were
 good enough for my purposes.
 Additionally, I might be able to produce an even better model by using
 stacked ensembles, which often serve to reduce predictive error, especially
-when the error from component models is dominated by variance (Dormann et al. 2018).
+when the error from component models is dominated by variance (Dormann et al., 2018).
 Noisy data, which we can assume categorizes our LiDAR and building data, often
-yields models with variance dominated error (Dormann et al. 2018).
+yields models with variance dominated error (Dormann et al., 2018).
 One potential source of error in our models is the temporal match between
 predictor and response data used to fit the models.
 The building data, though published in 2018, has no associated
 time-of-acquisition requiring us to hope that the building classifications
 describe conditions close to those represented in the 2019 LiDAR acquisition
-(Heris et al. 2020).
+(Heris et al., 2020).
 
-Since the predictors used to train these models are primarily used for
-predicting forest structure, these models provide a relatively simple option
-to mask man-made structures from LiDAR-derived maps of forest structure like
-aboveground biomass or canopy height.
+The models developed in this report can be used to produce Boolean building
+presence maps, which can be leveraged to mask away buildings from maps of forest
+structure (e.g.~canopy-height, aboveground biomass),
+aiding in the production of more accurate representations of forest area and
+conditions.
+Since the predictors used to train these models can be used for both modeling
+forest structure and building presence, they offer an efficient way to
+improve the accuracy of forest structure maps with the same dataset.
 Further investigation is required to assess the transferrability of these models
 trained in one region with one LiDAR acquisition to others.
 If separate models are required for each distinct LiDAR acquisition or region,
@@ -362,7 +370,8 @@ slightly diminsihed, as these models would still serve as a reference point for
 other applications.
 Finally, a true accuracy assessment, using time-relevant reference data of
 higher quality than the building data used herein should be conducted to assess
-the suitability of these models in real-world applications (Stehman and Foody 2019).
+the suitability of these models in real-world mapping applications
+(Stehman and Foody, 2019).
 
 \newpage{}
 
@@ -373,106 +382,106 @@ the suitability of these models in real-world applications (Stehman and Foody 20
 \hypertarget{refs}{}
 \begin{CSLReferences}{1}{0}
 \leavevmode\vadjust pre{\hypertarget{ref-rmd_man}{}}%
-Allaire, JJ, Yihui Xie, Jonathan McPherson, Javier Luraschi, Kevin Ushey, Aron Atkins, Hadley Wickham, Joe Cheng, Winston Chang, and Richard Iannone. 2021. \emph{Rmarkdown: Dynamic Documents for r}. \url{https://github.com/rstudio/rmarkdown}.
+Allaire, J., Xie, Y., McPherson, J., Luraschi, J., Ushey, K., Atkins, A., Wickham, H., Cheng, J., Chang, W., Iannone, R., 2021. Rmarkdown: Dynamic documents for r.
 
 \leavevmode\vadjust pre{\hypertarget{ref-Chen2016}{}}%
-Chen, Qi, and Ronald McRoberts. 2016. {``Statewide Mapping and Estimation of Vegetation Aboveground Biomass Using Airborne Lidar.''} In \emph{2016 {IEEE} International Geoscience and Remote Sensing Symposium ({IGARSS})}. {IEEE}. \url{https://doi.org/10.1109/igarss.2016.7730157}.
+Chen, Q., McRoberts, R., 2016. Statewide mapping and estimation of vegetation aboveground biomass using airborne lidar, in: 2016 {IEEE} International Geoscience and Remote Sensing Symposium ({IGARSS}). {IEEE}. \url{https://doi.org/10.1109/igarss.2016.7730157}
 
 \leavevmode\vadjust pre{\hypertarget{ref-Dormann2018}{}}%
-Dormann, Carsten F., Justin M. Calabrese, Gurutzeta Guillera-Arroita, Eleni Matechou, Volker Bahn, Kamil Bartoń, Colin M. Beale, et al. 2018. {``Model Averaging in Ecology: A Review of Bayesian, Information-Theoretic, and Tactical Approaches for Predictive Inference.''} \emph{Ecological Monographs} 88 (4): 485--504. \url{https://doi.org/10.1002/ecm.1309}.
+Dormann, C.F., Calabrese, J.M., Guillera-Arroita, G., Matechou, E., Bahn, V., Bartoń, K., Beale, C.M., Ciuti, S., Elith, J., Gerstner, K., Guelat, J., Keil, P., Lahoz-Monfort, J.J., Pollock, L.J., Reineking, B., Roberts, D.R., Schröder, B., Thuiller, W., Warton, D.I., Wintle, B.A., Wood, S.N., Wüest, R.O., Hartig, F., 2018. Model averaging in ecology: A review of bayesian, information-theoretic, and tactical approaches for predictive inference. Ecological Monographs 88, 485--504. \url{https://doi.org/10.1002/ecm.1309}
 
 \leavevmode\vadjust pre{\hypertarget{ref-Gray2012}{}}%
-Gray, Andrew N, Thomas J Brandeis, John D Shaw, William H McWilliams, and Patrick Miles. 2012. {``Forest Inventory and Analysis Database of the United States of America (FIA).''} \emph{Biodiversity and Ecology} 4: 225--31. \url{https://doi.org/10.7809/b-e.00079}.
+Gray, A.N., Brandeis, T.J., Shaw, J.D., McWilliams, W.H., Miles, P., 2012. Forest inventory and analysis database of the united states of america (FIA). Biodiversity and Ecology 4, 225--231. \url{https://doi.org/10.7809/b-e.00079}
 
 \leavevmode\vadjust pre{\hypertarget{ref-Hawbaker2010}{}}%
-Hawbaker, Todd J., Terje Gobakken, Adrian Lesak, Eric Trømborg, Kirk Contrucci, and Volker Radeloff. 2010. {``{Light Detection and Ranging-Based Measures of Mixed Hardwood Forest Structure}.''} \emph{Forest Science} 56 (3): 313--26. \url{https://doi.org/10.1093/forestscience/56.3.313}.
+Hawbaker, T.J., Gobakken, T., Lesak, A., Trømborg, E., Contrucci, K., Radeloff, V., 2010. {Light Detection and Ranging-Based Measures of Mixed Hardwood Forest Structure}. Forest Science 56, 313--326. \url{https://doi.org/10.1093/forestscience/56.3.313}
 
 \leavevmode\vadjust pre{\hypertarget{ref-tidyselect}{}}%
-Henry, Lionel, and Hadley Wickham. 2021. \emph{Tidyselect: Select from a Set of Strings}. \url{https://CRAN.R-project.org/package=tidyselect}.
+Henry, L., Wickham, H., 2021. Tidyselect: Select from a set of strings.
 
 \leavevmode\vadjust pre{\hypertarget{ref-Heris2020b}{}}%
-Heris, Mehdi P., Nathan Leon Foks, Kenneth J. Bagstad, Austin Troy, and Zachary H. Ancona. 2020. {``A Rasterized Building Footprint Dataset for the United States''} 7 (1). \url{https://doi.org/10.1038/s41597-020-0542-3}.
+Heris, M.P., Foks, N.L., Bagstad, K.J., Troy, A., Ancona, Z.H., 2020. A rasterized building footprint dataset for the united states 7. \url{https://doi.org/10.1038/s41597-020-0542-3}
 
 \leavevmode\vadjust pre{\hypertarget{ref-Raster2021}{}}%
-Hijmans, Robert J. 2021. \emph{Raster: Geographic Data Analysis and Modeling}. \url{https://CRAN.R-project.org/package=raster}.
+Hijmans, R.J., 2021. Raster: Geographic data analysis and modeling.
 
 \leavevmode\vadjust pre{\hypertarget{ref-Hosking1990}{}}%
-Hosking, J. R. M. 1990. {``L-Moments: Analysis and Estimation of Distributions Using Linear Combinations of Order Statistics.''} \emph{Journal of the Royal Statistical Society. Series B (Methodological)} 52 (1): 105--24. \url{http://www.jstor.org/stable/2345653}.
+Hosking, J.R.M., 1990. L-moments: Analysis and estimation of distributions using linear combinations of order statistics. Journal of the Royal Statistical Society. Series B (Methodological) 52, 105--124.
 
 \leavevmode\vadjust pre{\hypertarget{ref-Huang2019}{}}%
-Huang, Wenli, Katelyn Dolan, Anu Swatantran, Kristofer Johnson, Hao Tang, Jarlath O'Neil-Dunne, Ralph Dubayah, and George Hurtt. 2019. {``High-Resolution Mapping of Aboveground Biomass for Forest Carbon Monitoring System in the Tri-State Region of Maryland, Pennsylvania and Delaware, {USA}.''} \emph{Environmental Research Letters} 14 (9): 095002. \url{https://doi.org/10.1088/1748-9326/ab2917}.
+Huang, W., Dolan, K., Swatantran, A., Johnson, K., Tang, H., O'Neil-Dunne, J., Dubayah, R., Hurtt, G., 2019. High-resolution mapping of aboveground biomass for forest carbon monitoring system in the tri-state region of maryland, pennsylvania and delaware, {USA}. Environmental Research Letters 14, 095002. \url{https://doi.org/10.1088/1748-9326/ab2917}
 
 \leavevmode\vadjust pre{\hypertarget{ref-Hurtt2019}{}}%
-Hurtt, G, M Zhao, R Sahajpal, A Armstrong, R Birdsey, E Campbell, K Dolan, et al. 2019. {``Beyond {MRV}: High-Resolution Forest Carbon Modeling for Climate Mitigation Planning over Maryland, {USA}.''} \emph{Environmental Research Letters} 14 (4): 045013. \url{https://doi.org/10.1088/1748-9326/ab0bbe}.
+Hurtt, G., Zhao, M., Sahajpal, R., Armstrong, A., Birdsey, R., Campbell, E., Dolan, K., Dubayah, R., Fisk, J.P., Flanagan, S., Huang, C., Huang, W., Johnson, K., Lamb, R., Ma, L., Marks, R., O'Leary, D., O'Neil-Dunne, J., Swatantran, A., Tang, H., 2019. Beyond {MRV}: High-resolution forest carbon modeling for climate mitigation planning over maryland, {USA}. Environmental Research Letters 14, 045013. \url{https://doi.org/10.1088/1748-9326/ab0bbe}
 
 \leavevmode\vadjust pre{\hypertarget{ref-lidrRSE}{}}%
-Jean-Romain, Roussel, David Auty, Nicholas C. Coops, Piotr Tompalski, Tristan R. H. Goodbody, Andrew Sánchez Meador, Jean-François Bourdon, Florian de Boissieu, and Alexis Achim. 2020. {``lidR: An r Package for Analysis of Airborne Laser Scanning (ALS) Data.''} \emph{Remote Sensing of Environment} 251: 112061. \url{https://doi.org/10.1016/j.rse.2020.112061}.
+Jean-Romain, Roussel, Auty, D., Coops, N.C., Tompalski, P., Goodbody, T.R.H., Meador, A.S., Bourdon, J.-F., de Boissieu, F., Achim, A., 2020. lidR: An r package for analysis of airborne laser scanning (ALS) data. Remote Sensing of Environment 251, 112061. \url{https://doi.org/10.1016/j.rse.2020.112061}
 
 \leavevmode\vadjust pre{\hypertarget{ref-Johnson2014}{}}%
-Johnson, Kristofer D, Richard Birdsey, Andrew O Finley, Anu Swantaran, Ralph Dubayah, Craig Wayson, and Rachel Riemann. 2014. {``Integrating Forest Inventory and Analysis Data into a {LIDAR}-Based Carbon Monitoring System.''} \emph{Carbon Balance and Management} 9 (1). \url{https://doi.org/10.1186/1750-0680-9-3}.
+Johnson, K.D., Birdsey, R., Finley, A.O., Swantaran, A., Dubayah, R., Wayson, C., Riemann, R., 2014. Integrating forest inventory and analysis data into a {LIDAR}-based carbon monitoring system. Carbon Balance and Management 9. \url{https://doi.org/10.1186/1750-0680-9-3}
 
 \leavevmode\vadjust pre{\hypertarget{ref-Guolin2021}{}}%
-Ke, Guolin, Damien Soukhavong, James Lamb, Qi Meng, Thomas Finley, Taifeng Wang, Wei Chen, Weidong Ma, Qiwei Ye, and Tie-Yan Liu. 2021. \emph{Lightgbm: Light Gradient Boosting Machine}. \url{https://CRAN.R-project.org/package=lightgbm}.
+Ke, G., Soukhavong, D., Lamb, J., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., Ye, Q., Liu, T.-Y., 2021. Lightgbm: Light gradient boosting machine.
 
 \leavevmode\vadjust pre{\hypertarget{ref-caret}{}}%
-Kuhn, Max. 2021. \emph{Caret: Classification and Regression Training}. \url{https://CRAN.R-project.org/package=caret}.
+Kuhn, M., 2021. Caret: Classification and regression training.
 
 \leavevmode\vadjust pre{\hypertarget{ref-Meneguzzo2012}{}}%
-Meneguzzo, Dacia M., Greg C. Liknes, and Mark D. Nelson. 2012. {``Mapping Trees Outside Forests Using High-Resolution Aerial Imagery: A Comparison of Pixel- and Object-Based Classification Approaches.''} \emph{Environmental Monitoring and Assessment} 185 (8): 6261--75. \url{https://doi.org/10.1007/s10661-012-3022-1}.
+Meneguzzo, D.M., Liknes, G.C., Nelson, M.D., 2012. Mapping trees outside forests using high-resolution aerial imagery: A comparison of pixel- and object-based classification approaches. Environmental Monitoring and Assessment 185, 6261--6275. \url{https://doi.org/10.1007/s10661-012-3022-1}
 
 \leavevmode\vadjust pre{\hypertarget{ref-Microsoft}{}}%
-Microsoft. 2018. {``{US Building Footprints.}''} Microsoft.
+Microsoft, 2018. {US Building Footprints.}
 
 \leavevmode\vadjust pre{\hypertarget{ref-EGL_Lidar}{}}%
-New York Office of Information Technology Services. 2019. {``{LIDAR collection (QL2) for Erie, Genesee, and Livingston Counties New York Lidar; Classified Point Cloud}.''}
-
-\leavevmode\vadjust pre{\hypertarget{ref-Jarlath2013}{}}%
-O'Neil-Dunne, Jarlath P. M., Sean W. MacFaden, Anna R. Royar, and Keith C. Pelletier. 2013. {``An Object-Based System for LiDAR Data Fusion and Feature Extraction.''} \emph{Geocarto International} 28 (3): 227--42. \url{https://doi.org/10.1080/10106049.2012.689015}.
+New York Office of Information Technology Services, 2019. {LIDAR collection (QL2) for Erie, Genesee, and Livingston Counties New York Lidar; Classified Point Cloud}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-Jarlath2014}{}}%
-O'Neil-Dunne, Jarlath, Sean MacFaden, and Anna Royar. 2014. {``A Versatile, Production-Oriented Approach to High-Resolution Tree-Canopy Mapping in Urban and Suburban Landscapes Using GEOBIA and Data Fusion.''} \emph{Remote Sensing} 6 (12): 12837--65. \url{https://doi.org/10.3390/rs61212837}.
+O'Neil-Dunne, J.P., MacFaden, S.W., Royar, A.R., 2014. A versatile, production-oriented approach to high-resolution tree-canopy mapping in urban and suburban landscapes using GEOBIA and data fusion. Remote sensing 6, 12837--12865.
+
+\leavevmode\vadjust pre{\hypertarget{ref-Jarlath2013}{}}%
+O'Neil-Dunne, J.P., MacFaden, S.W., Royar, A.R., Pelletier, K.C., 2013. An object-based system for LiDAR data fusion and feature extraction. Geocarto International 28, 227--242.
 
 \leavevmode\vadjust pre{\hypertarget{ref-Perry2008}{}}%
-Perry, C. H., C. W. Woodall, G. C. Liknes, and M. M. Schoeneberger. 2008. {``Filling the Gap: Improving Estimates of Working Tree Resources in Agricultural Landscapes.''} \emph{Agroforestry Systems} 75 (1): 91--101. \url{https://doi.org/10.1007/s10457-008-9125-6}.
+Perry, C.H., Woodall, C.W., Liknes, G.C., Schoeneberger, M.M., 2008. Filling the gap: Improving estimates of working tree resources in agricultural landscapes. Agroforestry Systems 75, 91--101. \url{https://doi.org/10.1007/s10457-008-9125-6}
 
 \leavevmode\vadjust pre{\hypertarget{ref-Pflugmacher2014}{}}%
-Pflugmacher, Dirk, Warren B. Cohen, Robert E. Kennedy, and Zhiqiang Yang. 2014. {``Using Landsat-Derived Disturbance and Recovery History and Lidar to Map Forest Biomass Dynamics.''} \emph{Remote Sensing of Environment} 151: 124--37. \url{https://doi.org/10.1016/j.rse.2013.05.033}.
+Pflugmacher, D., Cohen, W.B., Kennedy, R.E., Yang, Z., 2014. Using landsat-derived disturbance and recovery history and lidar to map forest biomass dynamics. Remote Sensing of Environment 151, 124--137. \url{https://doi.org/10.1016/j.rse.2013.05.033}
 
 \leavevmode\vadjust pre{\hypertarget{ref-Heris2020a}{}}%
-Pourpeikari Heris, Mehdi, Nathan Foks, Kenneth J Bagstad, and Austin Troy. 2020. {``A National Dataset of Rasterized Building Footprints for the u.s.''} U.S. Geological Survey. \url{https://doi.org/10.5066/P9J2Y1WG}.
+Pourpeikari Heris, M., Foks, N., Bagstad, K.J., Troy, A., 2020. A national dataset of rasterized building footprints for the u.s. \url{https://doi.org/10.5066/P9J2Y1WG}
 
 \leavevmode\vadjust pre{\hypertarget{ref-RCore}{}}%
-R Core Team. 2021. \emph{R: A Language and Environment for Statistical Computing}. Vienna, Austria: R Foundation for Statistical Computing. \url{https://www.R-project.org/}.
+R Core Team, 2021. R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria.
 
 \leavevmode\vadjust pre{\hypertarget{ref-pROC}{}}%
-Robin, Xavier, Natacha Turck, Alexandre Hainard, Natalia Tiberti, Frédérique Lisacek, Jean-Charles Sanchez, and Markus Müller. 2011. {``pROC: An Open-Source Package for r and s+ to Analyze and Compare ROC Curves.''} \emph{BMC Bioinformatics} 12: 77.
+Robin, X., Turck, N., Hainard, A., Tiberti, N., Lisacek, F., Sanchez, J.-C., Müller, M., 2011. pROC: An open-source package for r and s+ to analyze and compare ROC curves. BMC Bioinformatics 12, 77.
 
 \leavevmode\vadjust pre{\hypertarget{ref-lidrCRAN}{}}%
-Roussel, Jean-Romain, and David Auty. 2020. \emph{Airborne LiDAR Data Manipulation and Visualization for Forestry Applications}. \url{https://cran.r-project.org/package=lidR}.
+Roussel, J.-R., Auty, D., 2020. Airborne LiDAR data manipulation and visualization for forestry applications.
 
 \leavevmode\vadjust pre{\hypertarget{ref-Stehman2019}{}}%
-Stehman, Stephen V., and Giles M. Foody. 2019. {``Key Issues in Rigorous Accuracy Assessment of Land Cover Products''} 231 (September): 111199. \url{https://doi.org/10.1016/j.rse.2019.05.018}.
+Stehman, S.V., Foody, G.M., 2019. Key issues in rigorous accuracy assessment of land cover products 231, 111199. \url{https://doi.org/10.1016/j.rse.2019.05.018}
 
 \leavevmode\vadjust pre{\hypertarget{ref-Bing}{}}%
-Team, Bing Maps. 2018. {``{Computer Generated Building Footprints for the United States.}''} Microsoft.
+Team, B.M., 2018. {Computer Generated Building Footprints for the United States.}
 
 \leavevmode\vadjust pre{\hypertarget{ref-ggplot2}{}}%
-Wickham, Hadley. 2016. \emph{Ggplot2: Elegant Graphics for Data Analysis}. Springer-Verlag New York. \url{https://ggplot2.tidyverse.org}.
+Wickham, H., 2016. ggplot2: Elegant graphics for data analysis. Springer-Verlag New York.
 
 \leavevmode\vadjust pre{\hypertarget{ref-dplyr}{}}%
-Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2021. \emph{Dplyr: A Grammar of Data Manipulation}. \url{https://CRAN.R-project.org/package=dplyr}.
+Wickham, H., François, R., Henry, L., Müller, K., 2021. Dplyr: A grammar of data manipulation.
 
 \leavevmode\vadjust pre{\hypertarget{ref-Wright2017}{}}%
-Wright, Marvin N., and Andreas Ziegler. 2017. {``Ranger: A Fast Implementation of Random Forests for High Dimensional Data in c++ and r.''} \emph{Journal of Statistical Software, Articles} 77 (1): 1--17. \url{https://doi.org/10.18637/jss.v077.i01}.
+Wright, M.N., Ziegler, A., 2017. Ranger: A fast implementation of random forests for high dimensional data in c++ and r. Journal of Statistical Software, Articles 77, 1--17. \url{https://doi.org/10.18637/jss.v077.i01}
 
 \leavevmode\vadjust pre{\hypertarget{ref-rmd_guide}{}}%
-Xie, Yihui, J. J. Allaire, and Garrett Grolemund. 2018. \emph{R Markdown: The Definitive Guide}. Boca Raton, Florida: Chapman; Hall/CRC. \url{https://bookdown.org/yihui/rmarkdown}.
+Xie, Y., Allaire, J.J., Grolemund, G., 2018. R markdown: The definitive guide. Chapman; Hall/CRC, Boca Raton, Florida.
 
 \leavevmode\vadjust pre{\hypertarget{ref-rmd_cook}{}}%
-Xie, Yihui, Christophe Dervieux, and Emily Riederer. 2020. \emph{R Markdown Cookbook}. Boca Raton, Florida: Chapman; Hall/CRC. \url{https://bookdown.org/yihui/rmarkdown-cookbook}.
+Xie, Y., Dervieux, C., Riederer, E., 2020. R markdown cookbook. Chapman; Hall/CRC, Boca Raton, Florida.
 
 \leavevmode\vadjust pre{\hypertarget{ref-kbl}{}}%
-Zhu, Hao. 2021. \emph{kableExtra: Construct Complex Table with 'Kable' and Pipe Syntax}.
+Zhu, H., 2021. kableExtra: Construct complex table with 'kable' and pipe syntax.
 
 \end{CSLReferences}
 

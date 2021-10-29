@@ -1,3 +1,4 @@
+.DS_Store
 lightgbm.model
 data/lidar/*
 data/buildings/raw/*

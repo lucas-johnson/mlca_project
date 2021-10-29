@@ -12,12 +12,12 @@ numbersections: true
 output:
   bookdown::pdf_book:
     base_format: rticles::elsevier_article
-    
+csl: remote-sensing-of-environment.csl
     
 keep_md: yes
 abstract: |
   Airborne LiDAR has emerged as a uniquely valuable and information-rich source 
-  of remote sensing (RS) data for high-resolution forest assessment and mapping.
+  of remote sensing data for high-resolution forest assessment and mapping.
   However, LiDAR data is limited in its ability to distinguish man-made 
   structures from natural ones, necessitating the addition of external forest
   masks in LiDAR-based forest mapping projects.
@@ -39,8 +39,8 @@ abstract: |
 
 # note: non-breaking space (red highlight) above fixes line numbers in abstract
    
-nocide: |
-  @rmd_cook, @rmd_guide, @rmd_man, @ggplot2, @dplyr, @tidyselect, @kbl, @Hosking1990
+nocite: |
+  @rmd_cook, @rmd_guide, @rmd_man, @ggplot2, @dplyr, @tidyselect, @kbl, @Hosking1990, @RCore
 ---
 
 ```{r echo = FALSE, include = F}
@@ -79,7 +79,8 @@ However, it is well documented that landcover maps are not 100% accurate, and
 significant quantities of forest can be contained in non-forested classes 
 [@Johnson2014; @Perry2008; @Meneguzzo2012].
 Additionally, high-resolution tree-canopy delineation surfaces are expensive
-to produce often relying on expert interpretation and iterative tuning [@Jarlath2013; @Jarlath2014].
+to produce often relying on expert interpretation and iterative tuning 
+[@Jarlath2013; @Jarlath2014].
 
 In this report I attempt to find a middle way by producing models at reduced 
 cost that can predict the presence of buildings in a mixed-use landscape with a high-degree of accuracy at a 30m resolution. 
@@ -123,13 +124,16 @@ building raster to create stack of data where each pixel contained a set of 39
 predictors and one building indicator response variable.
 A stratified random sample was conducted on the raster stack, with the building
 indicator providing the levels of stratification. 
-3,500 pixels were selected from each stratum resulting in 7,000 observations for model training and testing. 
+3,500 pixels were selected from each stratum resulting in 7,000 observations for
+model training and testing. 
 This final dataset was converted to a 7000x40 (rows, columns) data frame.
 The lidR [@lidrCRAN; @lidrRSE] and raster [@Raster2021] packages were used for 
 height-normalization and dataset generation.
-Additionally, the first seven principle components were derived from the final dataset to produce an alternative dataset without multicollinearity predictor
-dataset [@RCore]. 
-This alternative dataset accounted for $\ge$ 95% of the information in the raw predictors and existed as a 7000x7 data frame.
+Additionally, the first seven principle components were derived from the final 
+dataset to produce an alternative dataset without multicollinearity predictor
+dataset. 
+This alternative dataset accounted for $\ge$ 95% of the information in the raw 
+predictors and existed as a 7000x7 data frame.
 
 
 ```{r predictors, echo = FALSE, message = FALSE, warning = FALSE}
@@ -158,15 +162,15 @@ dplyr::tribble(
 ## Models
 
 Three candidate classification models were fit to a random 70% 
-(calibration data; n = 
+(training data; n = 
 `r nrow(read.csv(here("data/training.csv")))`
 )
 of the observations, with the remaining 30% reserved for model performance 
 assessment (holdout data; n = 
 `r nrow(read.csv(here("data/testing.csv")))`
 ).
-The first candidate model was a simple logistic regression model [@RCore], 
-and was trained on the principle components variant of the calibration data.
+The first candidate model was a simple logistic regression model, 
+and was trained on the principle components variant of the training data.
 The second candidate model was a random forest (RF herafter) trained with
 the ranger R package [@Wright2017]. 
 The third candidate model was a stochastic gradient boosting machine 
@@ -175,7 +179,7 @@ The hyperparemeters for both the RF and LGB models were selected using a
 standard grid search where each combination of hyperparameters were compared 
 against eachother using the cross-entropy loss function 
 (CEL; Equation \@ref(eq:cel))
-computed from a random five-fold cross-validation with the calibration dataset.
+computed from a random five-fold cross-validation with the training dataset.
 CEL is computed as follows:
 
 \begin{equation}
@@ -186,7 +190,7 @@ Where $n$ is the number of observations in the fold, and $\hat{y_i}$ is
 the predicted probability of the true class.
 
 Postitive prediction thresholds for all models were chosen using the optimal
-ROC coordinates for the fully tuned models fit to the calibration data.
+ROC coordinates for the fully tuned models fit to the training data.
 Each of the models were assessed against the holdout dataset and compared to one
 another using overall accuracy, specificity, sensitivity, and AUC. 
 Additionally ROC curves were plotted for each model's results on the holdout 
@@ -301,10 +305,14 @@ time-of-acquisition requiring us to hope that the building classifications
 describe conditions close to those represented in the 2019 LiDAR acquisition
 [@Heris2020b].
 
-Since the predictors used to train these models are primarily used for 
-predicting forest structure, these models provide a relatively simple option
-to mask man-made structures from LiDAR-derived maps of forest structure like 
-aboveground biomass or canopy height. 
+The models developed in this report can be used to produce Boolean building 
+presence maps, which can be leveraged to mask away buildings from maps of forest 
+structure (e.g. canopy-height, aboveground biomass), 
+aiding in the production of more accurate representations of forest area and 
+conditions. 
+Since the predictors used to train these models can be used for both modeling
+forest structure and building presence, they offer an efficient way to 
+improve the accuracy of forest structure maps with the same dataset.
 Further investigation is required to assess the transferrability of these models
 trained in one region with one LiDAR acquisition to others.
 If separate models are required for each distinct LiDAR acquisition or region, 
@@ -313,8 +321,10 @@ slightly diminsihed, as these models would still serve as a reference point for
 other applications. 
 Finally, a true accuracy assessment, using time-relevant reference data of 
 higher quality than the building data used herein should be conducted to assess 
-the suitability of these models in real-world applications [@Stehman2019].
+the suitability of these models in real-world mapping applications 
+[@Stehman2019].
 
 \newpage{}
 
 # References {#references .unnumbered}
+
