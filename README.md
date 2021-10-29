@@ -6,12 +6,12 @@ and Applications (FOR 796) Fall 2021
 
 ## Reproduce the Report
 
-(Last reproduced 2021-10-28)
+***(Last reproduced 2021-10-28)***
 
-Run the following
+Run the following:
 
 ``` r
-source(here::here("code/run.R")
+source(here::here("code/run.R"))
 ```
 
 to re-train the three component models, produce model assessment data,
